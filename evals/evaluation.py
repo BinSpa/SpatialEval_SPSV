@@ -262,6 +262,55 @@ def convert_str_to_int(var: str) -> Optional[int]:
         except ValueError:
             return var
     return var
+
+
+def extract_answer_from_text_spatialreal(text: str, question_id: int = 0, model_name: Optional[str] = None) -> Optional[str]:
+    """Extracts answers from spatial real task text (multiple choice A-D)."""
+    if text is None:
+        return None
+
+    number_mapping = {
+        'zero': 0, 'no': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4,
+        'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9,
+        'ten': 10, 'eleven': 11, 'twelve': 12, 'thirteen': 13,
+        'fourteen': 14, 'fifteen': 15, 'sixteen': 16,
+    }
+
+    # Try to find option letter answer (e.g., "A. eight" or "B" or "D. six")
+    option_match = re.search(r'\b([A-D])[\.\:]\s*(\w+)', text)
+    if option_match:
+        option_text = option_match.group(2)
+        # Convert word numbers to digits
+        if option_text.lower() in number_mapping:
+            return str(number_mapping[option_text.lower()])
+        return option_text
+
+    # Try to find "The answer is X" patterns
+    answer_match = re.search(r'(?:answer is|answer:\s*)\s*([A-D])', text, re.IGNORECASE)
+    if answer_match:
+        return answer_match.group(1)
+
+    # Try to find standalone option letter at start of answer
+    letter_match = re.match(r'^\s*([A-D])\b', text)
+    if letter_match:
+        return letter_match.group(1)
+
+    # Fallback: look for word numbers
+    found_numbers = []
+    for text_num, num in number_mapping.items():
+        for match in re.finditer(rf'\b{text_num}\b', text, re.IGNORECASE):
+            found_numbers.append((match.start(), str(num)))
+
+    # Look for digit sequences
+    text_clean = re.sub(r'^\n\n\d+\.\s', '', text)
+    for match in re.finditer(r'\d+', text_clean):
+        found_numbers.append((match.start(), match.group(0)))
+
+    if found_numbers:
+        found_numbers.sort(key=lambda x: x[0])
+        return found_numbers[0][1]
+
+    return None
     
 def evaluate_model_accuracy(model_output_path: str, eval_summary_path: str, model_name: Optional[str] = None) -> Tuple[float, int]:
     """Evaluates the accuracy of the model based on the output and summary paths."""
@@ -282,6 +331,10 @@ def evaluate_model_accuracy(model_output_path: str, eval_summary_path: str, mode
                     model_answer = extract_answer_from_text_mazenav(data['answer'], question_id, model_name)
                 elif task == 'spatialgrid':
                     model_answer = extract_answer_from_text_spatialgrid(data['answer'], question_id, model_name)
+                elif task == 'spatialreal':
+                    model_answer = extract_answer_from_text_spatialreal(data['answer'], question_id, model_name)
+                else:
+                    continue
                 
                 ref_ans = str(data['oracle_answer']).lower()
                 model_answer = str(model_answer).lower()

@@ -136,7 +136,7 @@ def main(args, model, processor, dataset, output_file_path):
                         prompt = format_bunny_tqa_prompt_hf(item['text'], args)
                     else:
                         prompt = format_bunny_vqa_prompt_hf(item['text'], args)
-                elif "qwen" or "cog" or "instructblip" or "llava" in args.model_path.lower() or "merged" in args.model_path.lower():
+                elif any(k in args.model_path.lower() for k in ("qwen", "cog", "instructblip", "llava")) or "merged" in args.model_path.lower():
                     if args.w_reason:
                         prompt = f"{item['text']}\nFirst, provide a concise answer in one sentence. Then, elaborate on the reasoning behind your answer in a detailed, step-by-step explanation."
                     elif args.completion:

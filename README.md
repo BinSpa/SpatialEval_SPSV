@@ -1,158 +1,138 @@
-# SpatialEval
+# SpatialEval - Large-Scale VLM Evaluation
 
-Welcome to the official codebase for [Is A Picture Worth A Thousand Words? Delving Into Spatial Reasoning for Vision Language Models](https://arxiv.org/abs/2406.14852). 
+Evaluation of **11 Vision-Language Models** on the [SpatialEval benchmark](https://arxiv.org/abs/2406.14852) (NeurIPS 2024), a spatial reasoning benchmark with 4,635 samples per mode across 4 tasks.
 
-## 📌 Quick Links
-[![Project Page](https://img.shields.io/badge/🌐_Project_Page-blue?style=for-the-badge)](https://spatialeval.github.io/)
-[![Paper](https://img.shields.io/badge/📖_Paper-red?style=for-the-badge)](https://arxiv.org/pdf/2406.14852)
-[![Dataset](https://img.shields.io/badge/🤗_Dataset-green?style=for-the-badge)](https://huggingface.co/datasets/MilaWang/SpatialEval)
-[![Talk](https://img.shields.io/badge/🎤_5_min_Talk-purple?style=for-the-badge)](https://neurips.cc/virtual/2024/poster/94371)
+## Results Overview (VQA mode, full 4635 samples/model)
 
+| Rank | Model | Size | spatialmap | mazenav | spatialgrid | spatialreal | Overall |
+|------|-------|------|-----------|---------|------------|------------|---------|
+| 1 | **Molmo2-8B** | 8B | 73.7% | 37.3% | **88.1%** | 16.3% | **64.9%** |
+| 2 | Qwen3-VL-4B | 4B | 69.0% | **46.3%** | 77.9% | 8.9% | **62.8%** |
+| 3 | MiniCPM-V-4.5 | 4.5B | 69.6% | 46.1% | 77.1% | 13.3% | **62.8%** |
+| 4 | Molmo2-4B | 4B | 67.5% | 37.5% | 85.8% | **17.8%** | **62.3%** |
+| 5 | SAIL-VL2-8B | 8B | 71.7% | 30.5% | 87.3% | 12.6% | **61.7%** |
+| 6 | Qwen3-VL-8B | 8B | **77.3%** | 33.0% | 76.3% | 10.4% | **60.7%** |
+| 7 | LLaVA-OV-1.5-4B | 4B | 72.5% | 29.8% | 77.9% | 15.6% | **58.8%** |
+| 8 | InternVL3-4B | 4B | 64.6% | 31.9% | 80.4% | 13.3% | **57.6%** |
+| 9 | InternVL3-8B | 8B | 65.9% | 30.9% | 78.1% | 8.1% | **56.9%** |
+| 10 | LLaVA-OV-1.5-8B | 8B | 68.0% | 18.7% | 81.5% | 34.8% | **55.5%** |
+| 11 | Gemma-3-4b | 4B | 39.2% | 31.3% | 67.1% | 6.7% | **44.7%** |
 
-## 💥 News 💥
+> Full analysis in [results_comparison.md](results_comparison.md) and [PROJECT_REPORT.md](PROJECT_REPORT.md).
 
-* **[2024.09.25]** 🎉 SpatialEval has been accepted to **NeurIPS 2024**!
-* **[2024.09.16]** 🌟 SpatialEval has been included in [Eureka](https://www.microsoft.com/en-us/research/publication/eureka-evaluating-and-understanding-large-foundation-models/) from **Microsoft Research**!
+## Benchmark Structure
 
-* **[2024.06.21]** 📢 SpatialEval is now publicly available on [arXiv](https://arxiv.org/abs/2406.14852)
+SpatialEval tests spatial reasoning across 4 tasks:
 
-## 🤔 About SpatialEval
+| Task | Description | Samples | Question Types |
+|------|-------------|---------|----------------|
+| spatialmap | Direction/position on synthetic maps | 1,500 | direction, nearest object, count |
+| mazenav | Path counting/navigation in mazes | 1,500 | path count, step count, reachability |
+| spatialgrid | Animal counting/identification in 5x5 grids | 1,500 | count, identify, identify at position |
+| spatialreal | Real-world image spatial reasoning | 135 | varied counting/identification |
 
-SpatialEval is a comprehensive benchmark for evaluating spatial intelligence in LLMs and VLMs across four key dimensions:
-- Spatial relationships
-- Positional understanding
-- Object counting
-- Navigation
+Each task supports 3 modes: TQA (text-only), VQA (vision), VTQA (vision+text). Total: 13,905 samples.
 
-### Benchmark Tasks
-1. **Spatial-Map**: Understanding spatial relationships between objects in map-based scenarios
-2. **Maze-Nav**: Testing navigation through complex environments
-3. **Spatial-Grid**: Evaluating spatial reasoning within structured environments
-4. **Spatial-Real**: Assessing real-world spatial understanding
-
-Each task supports three input modalities:
-- Text-only (TQA)
-- Vision-only (VQA)
-- Vision-Text (VTQA)
-
-![SpatialEval Overview](assets/spatialeval_task.png)
-
-
-## 🚀 Quick Start
-
-
-### 📍 Load Dataset
-
-SpatialEval provides three input modalities—TQA (Text-only), VQA (Vision-only), and VTQA (Vision-text)—across four tasks: Spatial-Map, Maze-Nav, Spatial-Grid, and Spatial-Real. Each modality and task is easily accessible via Hugging Face. Ensure you have installed the [packages](https://huggingface.co/docs/datasets/en/quickstart):
-
-```python
-from datasets import load_dataset
-
-tqa = load_dataset("MilaWang/SpatialEval", "tqa", split="test")
-vqa = load_dataset("MilaWang/SpatialEval", "vqa", split="test")
-vtqa = load_dataset("MilaWang/SpatialEval", "vtqa", split="test")
-```
-
-
-### 📈 Evaluate SpatialEval
-
-SpatialEval supports any evaluation pipelines compatible with language models and vision-language models. For text-based prompts, use the `text` column with this structure:
-`{text} First, provide a concise answer in one sentence. Then, elaborate on the reasoning behind your answer in a detailed, step-by-step explanation.` The image input is in the `image` column, and the correct answers are available in the `oracle_answer`, `oracle_option`, and `oracle_full_answer` columns.
-
-Next, we provide full scripts for inference and evaluation.
-
-#### Install
-
-1. Clone this repository
-
-```python
-git clone git@github.com:jiayuww/SpatialEval.git
-```
-
-2. Install dependencies
-
-To run models like LLaVA and Bunny, install [LLaVA](https://github.com/haotian-liu/LLaVA) and [Bunny](https://github.com/BAAI-DCAI/Bunny). Install [fastchat](https://github.com/lm-sys/FastChat) for language model inference.
-For Bunny variants, ensure you merge LoRA weights into the base LLMs before initiation.
-
-#### 💬 Running Inference
-
-For language models, for example, to run on Llama-3-8B for all four tasks:
+## Quick Start
 
 ```bash
-# Run on all tasks
-python inference_lm.py \
-    --task "all" \
-    --mode "tqa" \
-    --w_reason \
-    --model-path "meta-llama/Meta-Llama-3-8B-Instruct" \
-    --output_folder outputs \
-    --temperature 0.2 \
-    --top_p 0.9 \
-    --repetition_penalty 1.0 \
-    --max_new_tokens 512 \
-    --device "cuda"
+export HF_HUB_CACHE=/path/to/models
+export HF_DATASETS_CACHE=/path/to/datasets
 
-# For specific tasks, replace "all" with:
-# - "spatialmap"
-# - "mazenav"
-# - "spatialgrid"
-# - "spatialreal"
+# Run a single model
+python inference_unified.py \
+    --model_path "Qwen/Qwen3-VL-4B-Instruct" \
+    --mode vqa --task all --w_reason \
+    --batch_size 8 \
+    --output_folder outputs --device cuda
+
+# Evaluate all models on both GPUs
+bash scripts/run_full_eval.sh
 ```
 
-For vision-language models, for example, to run LLaVA-1.6-Mistral-7B across all tasks:
+### Supported Models
 
-```python
-# VQA mode
-python inference_vlm.py \
-    --mode "vqa" \
-    --task "all" \
-    --model_path "liuhaotian/llava-v1.6-mistral-7b" \
-    --w_reason \
-    --temperature 0.2 \
-    --top_p 0.9 \
-    --repetition_penalty 1.0 \
-    --max_new_tokens 512 \
-    --device "cuda"
+`inference_unified.py` auto-detects and supports 11 models across 6 architectures:
 
-# For VTQA mode, use --mode "vtqa"
-```
+- **InternVL** (InternVL3_5-4B, InternVL3-8B) - native and custom chat API
+- **Qwen3-VL** (4B, 8B) - native AutoModelForImageTextToText
+- **Molmo2** (4B, 8B) - native AutoModelForImageTextToText
+- **LLaVA-OV-1.5** (4B, 8B) - custom code with flash attention patch
+- **MiniCPM-V-4.5** - custom model.chat() API
+- **SAIL-VL2-8B** - InternVL-style with Qwen3 backbone
+- **Gemma-3-4b** - native AutoModelForImageTextToText
 
-Example bash scripts are available in the `scripts/` folder. For more configurations, see `configs/inference_configs.py`. VLMs support `tqa`, `vqa`, and `vtqa` modes, while LMs support `tqa` only. Tasks include all four tasks or individual tasks like `spatialmap`, `mazenav`, `spatialgrid`, and `spatialreal`.
-We can also test the first `k` examples, for exmaple, first 100 samples for each question type in each task by specifying `--first_k 100`.
-
-#### 📊 Evaluation
-
-We use exact match for evaluation. For example, to evaluate Spatial-Map task on all three input modalities TQA, VQA and VTQA:
+### Evaluation
 
 ```bash
-# For TQA on Spatial-Map
-python evals/evaluation.py --mode 'tqa' --task 'spatialmap' --output_folder 'outputs/' --dataset_id 'MilaWang/SpatialEval' --eval_summary_dir 'eval_summary'
-# For VQA on Spatial-Map
-python evals/evaluation.py --mode 'vqa' --task 'spatialmap' --output_folder 'outputs/' --dataset_id 'MilaWang/SpatialEval' --eval_summary_dir 'eval_summary'
-# For VTQA on Spatial-Map
-python evals/evaluation.py --mode 'vtqa' --task 'spatialmap' --output_folder 'outputs/' --dataset_id 'MilaWang/SpatialEval' --eval_summary_dir 'eval_summary'
+python evals/evaluation.py --mode vqa --task spatialmap --output_folder outputs/
 ```
 
-Evaluation can also be configured for other tasks `mazenav`, `spatialgrid`, and `spatialreal`. Further details are in `evals/evaluation.py`.
+## What We Found
 
-### 💡 Dataset Generation Script
+### Bugs Fixed in Original Codebase
 
-Stay tuned! The dataset generation script will be released in Feburary 😉
+1. **Python truthiness bug** (`inference_vlm.py:139`): `"qwen" or "cog"` always evaluates to `True`
+2. **Missing spatialreal handler** (`evals/evaluation.py`): 135 samples silently dropped
+3. **Question grouping bias**: `--first_k` sampled unequally across tasks
 
-## ⭐ Citation
+### Scaling Insights
 
-If you find our work helpful, please consider citing our paper 😊
+| Family | 4B | 8B | Delta |
+|--------|-----|-----|-------|
+| Molmo2 | 62.3% | **64.9%** | +2.6pp |
+| Qwen3-VL | 62.8% | 60.7% | -2.1pp |
+| InternVL3 | 57.6% | 56.9% | -0.7pp |
+| LLaVA-OV | 58.8% | 55.5% | -3.3pp |
+
+Only Molmo2 benefits from scaling up. All other families degrade or stay flat at 8B.
+
+### Task Difficulty
+
+- **spatialgrid** (67-88%): Easiest - structured grid makes counting tractable
+- **spatialmap** (39-77%): Moderate - requires understanding relative positions
+- **mazenav** (19-46%): Hard - path counting demands multi-step reasoning
+- **spatialreal** (7-35%): Hardest - real-world spatial reasoning remains a major challenge
+
+## Further Analysis Ideas
+
+### 1. Error Analysis by Question Type
+Break down accuracy by qid within each task (e.g., direction vs. counting in spatialmap). This reveals whether models struggle with specific reasoning types (e.g., counting paths vs. determining reachability in mazenav).
+
+### 2. Cross-Mode Comparison (TQA vs VQA vs VTQA)
+Run TQA (text-only) and VTQA modes to measure how much vision actually helps. Compare VQA - TQA delta per model to quantify visual spatial grounding ability. Does adding an image improve or hurt performance?
+
+### 3. Scaling Laws within Model Families
+With 4B and 8B variants for Molmo2, Qwen3-VL, InternVL3, and LLaVA-OV, fit scaling curves. The surprising finding that most families degrade at 8B warrants investigation - is it architecture-specific (LLaVA-OV's custom attention), data issues, or something fundamental about spatial reasoning scaling?
+
+### 4. Chain-of-Thought vs Direct Answer Ablation
+Compare `--w_reason` vs `--bare` vs `--completion` prompts. Does reasoning help or hurt? Some models may produce correct short answers but incorrect reasoning, or vice versa.
+
+### 5. Answer Extraction Robustness
+The evaluation uses substring matching (`oracle_answer in model_answer`), which can cause false positives (e.g., "six" matching "sixteen"). Implement stricter exact-match or option-letter-only evaluation and compare scores. This affects absolute rankings but may also change relative rankings.
+
+### 6. Per-Instance Difficulty Analysis
+Identify which specific maze/grid/map instances are hardest across all models. Cluster by difficulty to understand what spatial configurations are universally challenging. Correlate with image complexity metrics (object count, path length, grid density).
+
+### 7. Attention Mechanism Ablation
+LLaVA-OV-8B dropped from expected ~60% to ~0% with eager attention vs 55.5% with flash attention. Systematically test eager vs flash attention for all models to quantify attention implementation effects on spatial reasoning.
+
+### 8. Latency-Accuracy Tradeoff
+Plot inference throughput (samples/min) vs accuracy for all 11 models. This Pareto analysis identifies the most efficient models for production deployment. Include batch size as a variable.
+
+### 9. Model Answer Consistency
+For questions with multiple instances of the same maze/grid/map (same image, same question, different random variations), measure answer consistency. High accuracy with low consistency suggests memorization rather than understanding.
+
+### 10. Correlation with General VLM Benchmarks
+Compare SpatialEval scores with general benchmarks (MMMU, MMMU-Pro, MathVista, AI2D). Is spatial reasoning a separate capability or correlated with general visual understanding?
+
+## Citation
 
 ```
 @inproceedings{wang2024spatial,
-        title={Is A Picture Worth A Thousand Words? Delving Into Spatial Reasoning for Vision Language Models},
-        author={Wang, Jiayu and Ming, Yifei and Shi, Zhenmei and Vineet, Vibhav and Wang, Xin and Li, Yixuan and Joshi, Neel},
-        booktitle={The Thirty-Eighth Annual Conference on Neural Information Processing Systems},
-        year={2024}
-      }
+    title={Is A Picture Worth A Thousand Words? Delving Into Spatial Reasoning for Vision Language Models},
+    author={Wang, Jiayu and Ming, Yifei and Shi, Zhenmei and Vineet, Vibhav and Wang, Xin and Li, Yixuan and Joshi, Neel},
+    booktitle={The Thirty-Eighth Annual Conference on Neural Information Processing Systems},
+    year={2024}
+}
 ```
-
-## 💬 Questions
-Have questions? We're here to help!
-- Open an issue in this repository
-- Contact us through the channels listed on our project page
