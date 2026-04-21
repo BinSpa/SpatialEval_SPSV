@@ -68,6 +68,65 @@ bash scripts/run_full_eval.sh
 python evals/evaluation.py --mode vqa --task spatialmap --output_folder outputs/
 ```
 
+## Output Format
+
+Each model produces a JSONL file at `outputs/MilaWang__SpatialEval/vqa/all/`. Each line is one sample:
+
+```json
+{
+  "id": "spatialmap.vqa.2000.0",
+  "answer": "A. Northeast.\n\nStep 1: Locate \"Police Supply Store\"...",
+  "oracle_answer": "Northeast",
+  "oracle_option": "A",
+  "oracle_full_answer": "Northeast (option A)",
+  "prompt": "...",
+  "image": "dataset"
+}
+```
+
+Fields:
+- `id` - Sample identifier in `{task}.{mode}.{instance_id}.{question_id}` format
+- `answer` - Raw model output (free-form text with reasoning when using `--w_reason`)
+- `oracle_answer` - Ground truth answer
+- `oracle_option` - Correct option letter (A/B/C/D)
+- `oracle_full_answer` - Full oracle answer with option
+- `image` - Image source: `"dataset"`, `"random"`, `"noise"`, or `""` (text-only)
+
+## How Accuracy is Calculated
+
+Accuracy is computed in two steps:
+
+### Step 1: Answer Extraction
+
+Each task has a dedicated regex-based extraction function in `evals/evaluation.py` that parses the free-form model answer into a clean string:
+
+| Task | Function | Extraction Strategy |
+|------|----------|-------------------|
+| spatialmap | `extract_answer_from_text_spatialmap()` | Direction words (qid0), object names (qid1), counts (qid2) |
+| mazenav | `extract_answer_from_text_mazenav()` | Path/step counts (qid0/1), yes/no (qid2) |
+| spatialgrid | `extract_answer_from_text_spatialgrid()` | Counts (qid0), animal names (qid1/2) |
+| spatialreal | `extract_answer_from_text_spatialreal()` | Option letters, number words, or digits |
+
+For example, given the raw answer `"A. Northeast.\n\nStep 1: ..."`, the spatialmap extractor (qid0) would extract `"northeast"`.
+
+### Step 2: Substring Matching
+
+The extracted answer is compared against the oracle answer using **substring matching** (line 350 of `evals/evaluation.py`):
+
+```python
+eval_result = int(ref_ans.lower() in model_answer.lower())
+```
+
+Accuracy = `correct_answers / total_samples`
+
+### Known Limitation
+
+The substring matching can produce **false positives**:
+- Oracle `"six"` matches model answer `"sixteen"` (substring containment)
+- Oracle `"2"` matches model answer `"12"`
+
+This inflates accuracy scores, especially for counting tasks (mazenav qid0/qid1, spatialgrid qid0, spatialreal). A stricter exact-match or option-letter-only evaluation would likely yield different (lower) scores. See "Further Analysis Ideas > Answer Extraction Robustness" for improvement suggestions.
+
 ## What We Found
 
 ### Bugs Fixed in Original Codebase
